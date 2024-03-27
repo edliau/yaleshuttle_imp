@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mapbox Application</title>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    #map-container {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="map-container"></div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoic29seWNhIiwiYSI6ImNpejhqZmlmNjAwMDUycW82N3g2dG05ZHYifQ.CKn9Ww3bjhirdny-PIZqdg';
+    const map = new mapboxgl.Map({
+      container: 'map-container',
+      style: 'mapbox://styles/mapbox/streets-v11',
+      center: [-72.923995, 41.309798],
+      zoom: 12
+    });
+
+    let markers = {};
+
+    const colorDict = {
+      '1': '#DAD2D8',
+      '2': '#143642',
+      '3': '#0F8B8D',
+      '8': '#EC9A29',
+      '9': '#2B061E',
+      '10': '#BA2D0B',
+      '11': '#003E1F',
+      '12': '#D5F2E3'
+    };
+
+    function getMarkerColor(route) {
+      return colorDict[route] || '#000000'; // Assign default color if not found in the dictionary
+    }
+
+    function updateMarkers(data) {
+        data.forEach(row => {
+          const { id, name, lat, lon, heading, route, lastStop, lastUpdate } = row;
+          const key = `${route}-${id}`;
+          if (markers[key]) {
+            // Update the position of the existing marker
+            markers[key].setLngLat([lon, lat]);
+          } else {
+            // Create a new marker
+            const color = getMarkerColor(route);
+            markers[key] = new mapboxgl.Marker({
+              color: color
+            })
+            .setLngLat([lon, lat])
+            .addTo(map);
+          }
+
+          markers[key].setPopup(
+            new mapboxgl.Popup()
+              .setHTML(`
+                <h3>Route ${route}</h3>
+                <p>Name: ${name}</p>
+                <p>Heading: ${heading}°</p>
+                <p>Last stop: ${lastStop}</p>
+                <p>Last update: ${new Date(lastUpdate * 1000).toLocaleString()}</p>
+              `)
+          );
+        });
+      }
+
+    function fetchAndUpdateData() {
+      fetch('http://localhost:3000/data')
+        .then(response => response.json())
+        .then(data => {
+          updateMarkers(data);
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    }
+
+    fetchAndUpdateData();
+    setInterval(fetchAndUpdateData, 10000); // Update every 10 seconds
+  </script>
+</body>
+</html>

@@ -20,13 +20,14 @@ while True:
 
             connection.commit()
 
-            cursor.execute("SELECT * FROM shuttles")
-            rows = cursor.fetchall()
+            print(data)
+            # cursor.execute("SELECT * FROM shuttles")
+            # rows = cursor.fetchall()
 
-            for row in rows:
-                print(row)
+            # for row in rows:
+            #     print(row)
 
-            print(connection.total_changes)
+            # print(connection.total_changes)
             time.sleep(5)
         else:
             print(f"Error: {response.status_code} - {response.text}")
