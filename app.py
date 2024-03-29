@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request, make_response, redirect, url_for, render_template
 import sqlite3
+import json
 from flask_cors import CORS
 
 app = Flask(__name__)
@@ -11,6 +12,16 @@ def index():
     response = make_response(html)
     return response
 
+@app.route('/receive-coordinates', methods=['POST'])
+def receive_coordinates():
+    data = request.json
+    start = json.loads(data["start"])
+    end = json.loads(data["end"])
+
+    print(start["lat"])  # Example use
+    print(start["lng"])  # Example use
+
+    return 'Coordinates received.', 200
 
 @app.route('/data', methods=['GET'])
 def get_data():

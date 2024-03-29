@@ -14,11 +14,65 @@
       width: 100vw;
       height: 100vh;
     }
+
+    .map-overlay {
+        font:
+            12px/20px 'Helvetica Neue',
+            Arial,
+            Helvetica,
+            sans-serif;
+        position: absolute;
+        width: 350px;
+        top: 0;
+        left: 0;
+        padding: 10px;
+    }
+
+    .map-overlay .map-overlay-inner {
+        background-color: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        border-radius: 3px;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .map-overlay-inner fieldset {
+        display: flex;
+        justify-content: space-between;
+        border: none;
+    }
+
+    .map-overlay-inner label {
+        font-weight: bold;
+        margin-right: 10px;
+    }
+
+    .map-overlay-inner .select-fieldset {
+        display: block;
+    }
+
+    .map-overlay-inner .select-fieldset label {
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .map-overlay-inner .select-fieldset select {
+        width: 100%;
+    }
+
   </style>
 </head>
 <body>
   <div id="map-container"></div>
+  <div class="map-overlay top">
+    <div class="map-overlay-inner">
+        <fieldset class="select-fieldset">
+            <label id="coord1">Start Coord:</label>
+            <label id="coord2">End Coord:</label>
+        </fieldset>
+    </div>
 
+  
   <script>
     mapboxgl.accessToken = 'pk.eyJ1Ijoic29seWNhIiwiYSI6ImNpejhqZmlmNjAwMDUycW82N3g2dG05ZHYifQ.CKn9Ww3bjhirdny-PIZqdg';
     const map = new mapboxgl.Map({
@@ -29,6 +83,9 @@
     });
 
     let markers = {};
+    let coordtoggle = true;
+    let startCoord = null;
+    let endCoord = null;
 
     const colorDict = {
       '1': '#DAD2D8',
@@ -85,6 +142,39 @@
           console.error('Error fetching data:', error);
         });
     }
+
+    function sendCoordinates(start, end) {
+    fetch('/receive-coordinates', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ start: start, end: end })
+    })
+    .then(response => {
+      if (response.ok) {
+        console.log('Coordinates sent successfully!');
+      } else {
+        console.error('Failed to send coordinates.');
+      }
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+  }
+
+    map.on('click', (e) => {
+      if (coordtoggle) {
+        startCoord = JSON.stringify(e.lngLat);
+        document.getElementById('coord1').innerHTML = "Start Coord: " + startCoord;
+      } else {
+        endCoord = JSON.stringify(e.lngLat);
+        document.getElementById('coord2').innerHTML = "End Coord: " + endCoord;
+
+        sendCoordinatesToFlask(startCoord, endCoord);
+      }
+      coordtoggle = !coordtoggle;
+    });
 
     fetchAndUpdateData();
     setInterval(fetchAndUpdateData, 10000); // Update every 10 seconds
