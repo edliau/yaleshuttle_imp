@@ -71,6 +71,7 @@
             <label id="coord2">End Coord:</label>
         </fieldset>
     </div>
+  </div>
 
   
   <script>
@@ -163,15 +164,46 @@
     });
   }
 
+  function findShortestRoute(startCoord, endCoord) {
+    // Send the coordinates to the server to find the shortest route
+    fetch('/find-shortest-route', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ start: startCoord, end: endCoord })
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.text(); // Return the response text (shortest route)
+        } else {
+            throw new Error('Failed to find shortest route.');
+        }
+    })
+    .then(route => {
+        // Display the shortest route
+        console.log('Shortest Route:', route);
+        // You can display the route in your HTML or perform any other actions here
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+  }
+  //onClick, update the current and end coordinates, and pass them to the server to find the shortest route
     map.on('click', (e) => {
       if (coordtoggle) {
-        startCoord = JSON.stringify(e.lngLat);
-        document.getElementById('coord1').innerHTML = "Start Coord: " + startCoord;
-      } else {
-        endCoord = JSON.stringify(e.lngLat);
-        document.getElementById('coord2').innerHTML = "End Coord: " + endCoord;
-
-        sendCoordinatesToFlask(startCoord, endCoord);
+        startCoordJson = JSON.stringify(e.lngLat);
+        startCoord = JSON.parse(startCoordJson);
+        startCoordList = [startCoord.lng,startCoord.lat];
+        document.getElementById('coord1').innerHTML = "Start Coord: " + startCoordJson;
+      } 
+      else {
+        endCoordJson = JSON.stringify(e.lngLat);
+        endCoord = JSON.parse(endCoordJson);
+        endCoordList = [endCoord.lng,endCoord.lat];
+        document.getElementById('coord2').innerHTML = "End Coord: " + endCoordJson;
+      
+        findShortestRoute(startCoordList, endCoordList);
       }
       coordtoggle = !coordtoggle;
     });
