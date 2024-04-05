@@ -10,7 +10,7 @@ def find_shortest_route(G, start_stop, end_stop):
         return None
 
 # Connect to SQLite database
-conn = sqlite3.connect('routedata.db')
+conn = sqlite3.connect('route_data/routedata.db')
 cursor = conn.cursor()
 
 # Create a new directed graph
