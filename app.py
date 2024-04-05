@@ -20,9 +20,6 @@ def receive_coordinates():
     start = json.loads(data["start"])
     end = json.loads(data["end"])
 
-    print(start["lat"])  # Example use
-    print(start["lng"])  # Example use
-
     return 'Coordinates received.', 200
 
 @app.route('/data', methods=['GET'])
