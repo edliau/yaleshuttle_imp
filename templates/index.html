@@ -68,10 +68,12 @@
   <div id="map-container"></div>
   <div class="map-overlay top">
     <div class="map-overlay-inner">
-      <fieldset class="select-fieldset">
-        <label id="coord1">Start Coord:</label>
-        <label id="coord2">End Coord:</label>
-      </fieldset>
+     <h1>Yale Shuttle Route Finder</h1>
+      <p>Click to select start and end points.</p>
+        <fieldset class="select-fieldset">
+            <label id="coord1">Start Coord:</label>
+            <label id="coord2">End Coord:</label>
+        </fieldset>
     </div>
   </div>
 
@@ -135,8 +137,45 @@
       });
     }
 
+    function updateStops(stops) {
+      stops.forEach(row => {
+          const { id, name, lat, lon } = row;
+          const key = `${id}`;
+          if (markers[key]) {
+            // Update the position of the existing marker
+            markers[key].setLngLat([lon, lat]);
+          } else {
+            // Create a new marker
+            markers[key] = new mapboxgl.Marker({
+              color: '#000000'
+            })
+            .setLngLat([lon, lat])
+            .addTo(map);
+          }
+
+          markers[key].setPopup(
+            new mapboxgl.Popup()
+              .setHTML(`
+                <p>Name: ${name}</p>
+              `)
+          );
+        });
+
+    }
+
     function fetchAndUpdateData() {
       fetch('http://localhost:3000/data')
+        .then(response => response.json())
+        .then(data => {
+          updateMarkers(data);
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+        });
+    }
+
+    function fetchAndUpdateStops() {
+      fetch('http://localhost:3000/stops')
         .then(response => response.json())
         .then(data => {
           updateMarkers(data);
