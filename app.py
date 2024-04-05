@@ -59,6 +59,29 @@ def get_data():
 
     return jsonify(data)
 
+@app.route('/stops', methods=['GET'])
+def get_stops():
+    conn = sqlite3.connect('data.db')
+    c = conn.cursor()
+
+    # Get the most recent entries for each unique name
+    c.execute("""
+            SELECT * FROM stops
+    """)
+    rows = c.fetchall()
+    conn.close()
+
+    data = []
+    for row in rows:
+        data.append({
+            'id': row[0],
+            'name': row[1],
+            'lat': row[2],
+            'lon': row[3],
+        })
+
+    return jsonify(data)
+
 @app.route('/find-shortest-route', methods=['POST'])
 def find_shortest_route():
     data = request.json
