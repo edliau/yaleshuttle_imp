@@ -6,6 +6,7 @@
   <title>Mapbox Application</title>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <style>
     body {
       margin: 0;
@@ -88,19 +89,31 @@
     });
 
     let markers = {};
+    let stops_arr = {};
     let coordtoggle = true;
     var startCoordList = null;
     var endCoordList = null;
 
     const colorDict = {
-      '1': '#DAD2D8',
-      '2': '#143642',
-      '3': '#0F8B8D',
-      '8': '#EC9A29',
-      '9': '#2B061E',
-      '10': '#BA2D0B',
-      '11': '#003E1F',
-      '12': '#D5F2E3'
+      '1': '#4472C4',
+      '2': '#ED7D31',
+      '3': '#FF0000',
+      '8': '#DB1AD2',
+      '9': '#70AD46',
+      '10': '#6F30A1',
+      '11': '#7E6001',
+      '12': '#F6BE00'
+    };
+
+    const routesNames = {
+      '1': 'Blue',
+      '2': 'Orange',
+      '3': 'Red',
+      '8': 'Pink',
+      '9': 'Green',
+      '10': 'Purple',
+      '11': 'Brown',
+      '12': 'Yellow'
     };
 
     function getMarkerColor(route) {
@@ -127,7 +140,7 @@
         markers[key].setPopup(
           new mapboxgl.Popup()
             .setHTML(`
-                <h3>Route ${route}</h3>
+                <h3>${routesNames[route]} Shuttle</h3>
                 <p>Name: ${name}</p>
                 <p>Heading: ${heading}°</p>
                 <p>Last stop: ${lastStop}</p>
@@ -137,32 +150,45 @@
       });
     }
 
+    
+
     function updateStops(stops) {
-      stops.forEach(row => {
-          const { id, name, lat, lon } = row;
-          const key = `${id}`;
-          if (markers[key]) {
-            // Update the position of the existing marker
-            markers[key].setLngLat([lon, lat]);
-          } else {
-            // Create a new marker
-            markers[key] = new mapboxgl.Marker({
-              color: '#000000'
-            })
-            .setLngLat([lon, lat])
-            .addTo(map);
-          }
+      console.log("updateStops called");
+      console.log("Stops:", stops);
+      console.log("Stops array:", stops_arr);
 
-          markers[key].setPopup(
-            new mapboxgl.Popup()
-              .setHTML(`
-                <p>Name: ${name}</p>
-              `)
+      
+      stops.forEach((row, index) => {
+        const { id, name, lat, lon } = row;
+        const key = `${id}`;
+        const dotElement = document.createElement('div');
+            dotElement.className = 'dot-marker';
+        console.log(`Processing stop ${index + 1} with id: ${id}`);
+        
+        console.log("Stops array:", stops_arr);
+        if (stops_arr[key]) {
+          console.log(`Marker already exists for stop with id: ${id}`);
+          // Update the position of the existing marker
+          stops_arr[key].setLngLat([lon, lat]);
+        } else {
+          console.log(`Creating new marker for stop with id: ${id}`);
+          // Create a new marker
+          console.log(lon + " " + lat)
+          stops_arr[key] = new mapboxgl.Marker({
+            element: dotElement,
+          })
+          .setLngLat([lon, lat])
+          .addTo(map);
+          
+          stops_arr[key].setPopup(
+          new mapboxgl.Popup()
+            .setHTML(`
+              <p>Name: ${name}</p>
+            `)
           );
-        });
-
-    }
-
+        }
+      })}
+  
     function fetchAndUpdateData() {
       fetch('http://localhost:3000/data')
         .then(response => response.json())
@@ -175,10 +201,12 @@
     }
 
     function fetchAndUpdateStops() {
+      console.log("fetchAndUpdateStops called");
       fetch('http://localhost:3000/stops')
         .then(response => response.json())
         .then(data => {
-          updateMarkers(data);
+          console.log(data);
+          updateStops(data);
         })
         .catch(error => {
           console.error('Error fetching data:', error);
@@ -210,7 +238,6 @@
     }*/
 
     function findShortestRoute(startCoord, endCoord) {
-      // Send the coordinates to the server to find the shortest route
       fetch('/find-shortest-route', {
         method: 'POST',
         headers: {
@@ -220,20 +247,37 @@
       })
         .then(response => {
           if (response.ok) {
-            return response.text(); // Return the response text (shortest route)
+            return response.json(); // Return the GeoJSON response
           } else {
             throw new Error('Failed to find shortest route.');
           }
         })
-        .then(route => {
-          // Display the shortest route
-          console.log('Shortest Route:', route);
-          // You can display the route in your HTML or perform any other actions here
+        .then(routeGeoJSON => {
+          // Add the route as a new layer to the map
+          map.addSource('route', {
+            type: 'geojson',
+            data: routeGeoJSON
+          });
+    
+          map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            layout: {
+              'line-join': 'round',
+              'line-cap': 'round'
+            },
+            paint: {
+              'line-color': '#888',
+              'line-width': 8
+            }
+          });
         })
         .catch(error => {
           console.error('Error:', error);
         });
     }
+    
     //onClick, update the end coordinates, and pass them to the server to find the shortest route. Also checks for user location.
     map.on('click', (e) => {
       if (startCoordList == null) {
@@ -275,6 +319,9 @@
     // END Geolocation
 
     fetchAndUpdateData();
+
+    console.log("Fetching stops");
+    fetchAndUpdateStops();
     setInterval(fetchAndUpdateData, 10000); // Update every 10 seconds
   </script>
 </body>

@@ -61,12 +61,12 @@ def get_data():
 
 @app.route('/stops', methods=['GET'])
 def get_stops():
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect(r'route_data\routedata.db')
     c = conn.cursor()
 
     # Get the most recent entries for each unique name
     c.execute("""
-            SELECT * FROM stops
+            SELECT * FROM Stops
     """)
     rows = c.fetchall()
     conn.close()
@@ -79,6 +79,7 @@ def get_stops():
             'lat': row[2],
             'lon': row[3],
         })
+    print(f"Stops sent")
 
     return jsonify(data)
 

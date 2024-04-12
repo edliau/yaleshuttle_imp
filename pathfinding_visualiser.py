@@ -26,7 +26,7 @@ for route_id, stop_id in route_stops_data:
     stop_data = cursor.fetchone()
     if stop_data:
         stop_id, stop_name, latitude, longitude = stop_data
-        G.add_node(stop_id, name=stop_name, latitude=latitude, longitude=longitude)
+        G.add_node(stop_id, id = stop_id, name=stop_name, latitude=latitude, longitude=longitude)
 
 # Add directed edges between stops for each route
 for route_id, stop_id in route_stops_data:
@@ -51,7 +51,7 @@ end_stop = int(end_stop)
 shortest_route = find_shortest_route(G, start_stop, end_stop)
 
 if shortest_route:
-    # Post-process the printed route
+    # Post-process the printed route    
     processed_route = [shortest_route[0]]  # Add starting stop
     for i in range(1, len(shortest_route)-1):
         current_stop = shortest_route[i]
@@ -64,3 +64,31 @@ if shortest_route:
     print("Processed route:", processed_route)
 else:
     print("No route found between the given stops.")
+
+import matplotlib.pyplot as plt
+
+# Function to draw the graph
+def draw_graph(G):
+    pos = nx.get_node_attributes(G, 'pos')
+    labels = nx.get_node_attributes(G, 'id')
+
+    # Default node colors
+    node_color_map = ['skyblue' if node not in shortest_route else 'green' for node in G]
+
+    # Draw the network
+    nx.draw(G, pos, labels=labels, with_labels=True, node_size=500, node_color=node_color_map, font_size=10)
+
+    # Draw edge labels to show the weights
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red')
+
+    # Show the plot
+    plt.show()
+
+# Assuming you have latitude and longitude as attributes,
+# you need to set them as positions for the nodes
+for node in G.nodes(data=True):
+    G.nodes[node[0]]['pos'] = (node[1]['longitude'], node[1]['latitude'])
+
+draw_graph(G)
+
