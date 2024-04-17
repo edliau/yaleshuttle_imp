@@ -1,5 +1,6 @@
 import sqlite3
 import networkx as nx
+from math import radians, sin, cos, sqrt, atan2
 
 # Function to find the shortest route between two stops
 def find_shortest_route(G, start_stop, end_stop):
@@ -8,12 +9,22 @@ def find_shortest_route(G, start_stop, end_stop):
         return shortest_path
     except nx.NetworkXNoPath:
         return None
+    
+# Function to calculate the distance between two points using the Haversine formula
+def haversine_distance(lat1, lon1, lat2, lon2):
+    # Convert latitude and longitude from degrees to radians
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
 
-import sqlite3
-import networkx as nx
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    distance = 6371 * c  # Radius of Earth in kilometers
+    return distance
 
 # Connect to SQLite database
-conn = sqlite3.connect('route_data/route_database.db')
+conn = sqlite3.connect('../route_data/route_database.db')
 cursor = conn.cursor()
 
 # Create a new directed graph
@@ -43,9 +54,14 @@ for route_id, stop_id in route_stops_data:
     next_stop_index = route_stops_data.index((route_id, stop_id)) + 1
     if next_stop_index < len(route_stops_data):
         next_stop_id = route_stops_data[next_stop_index][1]
-        # Calculate weight based on distance between stops (you can use other metrics if available)
-        weight = 1  # Placeholder weight, you can replace this with actual distance calculation
-        G.add_edge(stop_id, next_stop_id, route=route_id, weight=weight)
+        # Calculate weight based on Haversine distance between stops
+        current_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (stop_id,)).fetchone()
+        next_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (next_stop_id,)).fetchone()
+        if current_stop_data and next_stop_data:
+            current_lat, current_lon = current_stop_data
+            next_lat, next_lon = next_stop_data
+            distance = haversine_distance(current_lat, current_lon, next_lat, next_lon)
+            G.add_edge(stop_id, next_stop_id, route=route_id, weight=distance)
 
 # Close connection to the database
 conn.close()
@@ -90,11 +106,8 @@ def draw_graph(G):
     nx.draw(G, pos, labels=labels, with_labels=True, node_size=20, node_color=node_color_map, font_size=3)
 
     # Draw edge labels to show the weights
-    #edge_labels = nx.get_edge_attributes(G, 'weight')
-    #nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red')
-
-    #without weights visualised for now:
-    #nx.draw_networkx_edges(G, pos, alpha=0.5, edge_color='gray')
+    edge_labels = nx.get_edge_attributes(G, 'weight')
+    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red')
 
     # Show the plot
     plt.show()

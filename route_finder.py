@@ -1,5 +1,6 @@
 import sqlite3
 import networkx as nx
+from math import radians, sin, cos, sqrt, atan2
 
 def find_shortest_route(G, start_stop, end_stop):
     try:
@@ -7,6 +8,19 @@ def find_shortest_route(G, start_stop, end_stop):
         return shortest_path
     except nx.NetworkXNoPath:
         return None
+
+# Function to calculate the distance between two points using the Haversine formula
+def haversine_distance(lat1, lon1, lat2, lon2):
+    # Convert latitude and longitude from degrees to radians
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
+    c = 2 * atan2(sqrt(a), sqrt(1 - a))
+    distance = 6371 * c  # Radius of Earth in kilometers
+    return distance
 
 def process_route(input_start_stop, input_end_stop):
     # Connect to SQLite database
@@ -40,9 +54,14 @@ def process_route(input_start_stop, input_end_stop):
         next_stop_index = route_stops_data.index((route_id, stop_id)) + 1
         if next_stop_index < len(route_stops_data):
             next_stop_id = route_stops_data[next_stop_index][1]
-            # Calculate weight based on distance between stops (you can use other metrics if available)
-            weight = 1  # Placeholder weight, you can replace this with actual distance calculation
-            G.add_edge(stop_id, next_stop_id, route=route_id, weight=weight)
+            # Calculate weight based on Haversine distance between stops
+            current_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (stop_id,)).fetchone()
+            next_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (next_stop_id,)).fetchone()
+            if current_stop_data and next_stop_data:
+                current_lat, current_lon = current_stop_data
+                next_lat, next_lon = next_stop_data
+                distance = haversine_distance(current_lat, current_lon, next_lat, next_lon)
+                G.add_edge(stop_id, next_stop_id, route=route_id, weight=distance)
 
     # Close connection to the database
     conn.close()
