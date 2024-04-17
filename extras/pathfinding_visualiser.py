@@ -106,8 +106,8 @@ def draw_graph(G):
     nx.draw(G, pos, labels=labels, with_labels=True, node_size=20, node_color=node_color_map, font_size=3)
 
     # Draw edge labels to show the weights
-    edge_labels = nx.get_edge_attributes(G, 'weight')
-    nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red')
+    #edge_labels = nx.get_edge_attributes(G, 'weight')
+    #nx.draw_networkx_edge_labels(G, pos, edge_labels=edge_labels, font_color='red')
 
     # Show the plot
     plt.show()
