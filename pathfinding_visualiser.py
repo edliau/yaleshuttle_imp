@@ -62,19 +62,17 @@ shortest_route = find_shortest_route(G, start_stop, end_stop)
 
 if shortest_route:
     # Post-process the printed route
-    processed_route = [shortest_route[0]]  # Add starting stop
+    processed_route = [(0,shortest_route[0])]  # Add starting stop
     for i in range(1, len(shortest_route) - 1):
         current_stop = shortest_route[i]
         previous_stop = shortest_route[i - 1]
         next_stop = shortest_route[i + 1]
-        # Check if bus route changes
-        if G.edges[previous_stop, current_stop]['route'] != G.edges[current_stop, next_stop]['route']:
-            processed_route.append(current_stop)  # Add stop where route changes
-            processed_route.append('Route Change')  # Add marker for route change
-        else:
-            processed_route.append(current_stop)
-    processed_route.append(shortest_route[-1])  # Add final stop
-    print("Processed route:", processed_route)
+        processed_route.append((G.edges[current_stop, next_stop]['route'], current_stop))
+    processed_route.append((G.edges[previous_stop, current_stop]['route'], shortest_route[-1]))  # Add final stop
+    print("Processed route:")
+    for route_stop_pair in processed_route:
+        if route_stop_pair:  # Skip empty tuples
+            print(route_stop_pair)
 else:
     print("No route found between the given stops.")
 
