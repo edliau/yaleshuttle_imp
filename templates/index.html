@@ -243,7 +243,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ start: startCoord, end: endCoord })
+        body: JSON.stringify({ start: 106, end: 69 })
       })
         .then(response => {
           if (response.ok) {
@@ -252,24 +252,48 @@
             throw new Error('Failed to find shortest route.');
           }
         })
-        .then(routeGeoJSON => {
-          // Add the route as a new layer to the map
+        .then(routeData => {
+          console.log('Route data:', routeData);
+          const coordinates = routeData.map(coord => coord[0]);
+          console.log('Route coordinates:', coordinates);
+          const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+          const coords = coordinates.join(';')
+          const encodedString = encodeURIComponent(coords).replace(/,/g, '%2C');
+          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${mapboxgl.accessToken}&geometries=geojson`;
+          console.log('URL:', url);
+          return fetch(url);
+        })
+        .then(response => {
+          console.log('Response:', response);
+          return response.json();
+        })
+        .then(data => {
+          const route = data.routes[0].geometry;
+    
+          // Remove the existing 'route' source and layer if they exist
+          if (map.getSource('route')) {
+            map.removeLayer('route');
+            map.removeSource('route');
+          }
+    
+          // Add a new source with a unique ID
           map.addSource('route', {
             type: 'geojson',
-            data: routeGeoJSON
+            data: {
+              type: 'Feature',
+              geometry: route
+            }
           });
     
+          // Add the route line to the map
           map.addLayer({
             id: 'route',
             type: 'line',
             source: 'route',
-            layout: {
-              'line-join': 'round',
-              'line-cap': 'round'
-            },
             paint: {
-              'line-color': '#888',
-              'line-width': 8
+              'line-color': '#3887be',
+              'line-width': 5,
+              'line-opacity': 0.75
             }
           });
         })
@@ -277,7 +301,7 @@
           console.error('Error:', error);
         });
     }
-    
+
     //onClick, update the end coordinates, and pass them to the server to find the shortest route. Also checks for user location.
     map.on('click', (e) => {
       if (startCoordList == null) {
@@ -306,7 +330,8 @@
       trackUserLocation: true
     });
 
-    map.addControl(geolocate);
+    // Move the geolocate control to the bottom left
+    map.addControl(geolocate, 'bottom-left');
 
     geolocate.on('geolocate', (e) => {
       var lon = e.coords.longitude;

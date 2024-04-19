@@ -79,9 +79,19 @@ def get_stops():
             'lat': row[2],
             'lon': row[3],
         })
-    print(f"Stops sent")
+    ## print(f"Stops sent")
 
     return jsonify(data)
+
+@app.route('/find-shortest-route', methods=['POST'])
+def find_shortest_route():
+    data = request.get_json()
+    start_coord = data["start"]
+    end_coord = data["end"]
+    route = process_route(start_coord, end_coord)
+    ## print(route)
+    route_coords = route_to_coords(route)
+    return(jsonify(route_coords))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000, debug=True)
