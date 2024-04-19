@@ -160,3 +160,15 @@ def find_best_route(start_coords, end_coords):
     shortest_route_stop = min(weighted_scores, key=lambda x: x[2])
     
     return process_route(shortest_route_stop[0],target_final_stop[0])
+
+def route_to_coords(route):
+    conn = sqlite3.connect('route_data/route_database.db')
+    cursor = conn.cursor()
+    coords = []
+    for route_id, stop_id in route:
+        print(stop_id)
+        cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (stop_id,))
+        lat, lon = cursor.fetchone()
+        coords.append([(lon, lat), route_id])
+    conn.close()
+    return coords
