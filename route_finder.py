@@ -84,10 +84,11 @@ def process_route(input_start_stop, input_end_stop):
 
     # Add directed edges between stops for each route
     route_edges = {}
-    for route_id, stop_id in route_stops_data:
-        next_stop_index = route_stops_data.index((route_id, stop_id)) + 1
-        if next_stop_index < len(route_stops_data):
-            next_stop_id = route_stops_data[next_stop_index][1]
+    for i in range(len(route_stops_data) - 1):
+        route_id, stop_id = route_stops_data[i]
+        next_route_id, next_stop_id = route_stops_data[i + 1]
+        # Check if consecutive stops belong to the same route
+        if route_id == next_route_id:
             # Calculate weight based on Haversine distance between stops
             current_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (stop_id,)).fetchone()
             next_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (next_stop_id,)).fetchone()
@@ -95,7 +96,7 @@ def process_route(input_start_stop, input_end_stop):
                 current_lat, current_lon = current_stop_data
                 next_lat, next_lon = next_stop_data
                 distance = haversine_distance(current_lat, current_lon, next_lat, next_lon)
-                # Add the edge between stops if it doesn't exist
+                # Add the edge between stops
                 if (stop_id, next_stop_id) not in route_edges:
                     route_edges[(stop_id, next_stop_id)] = {'weight': distance, 'routes': set()}
                 # Add the route to the set of routes associated with this edge
