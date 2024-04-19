@@ -23,6 +23,38 @@ def haversine_distance(lat1, lon1, lat2, lon2):
     distance = 6371 * c  # Radius of Earth in kilometers
     return distance
 
+def least_change_combination(list_of_tuples):
+    new_list = []
+    
+    for i in range(len(list_of_tuples)):
+        sublist, _, _ = list_of_tuples[i]
+        best_number = None
+        max_chain_length = 0
+        
+        for number in sublist:
+            chain_length = 0
+            next_index = i + 1
+            while next_index < len(list_of_tuples):
+                if number in list_of_tuples[next_index][0]:
+                    chain_length += 1
+                else:
+                    break
+                next_index += 1
+            
+            if chain_length > max_chain_length:
+                max_chain_length = chain_length
+                best_number = number
+        
+        if best_number is None:
+            new_list.append(sublist[0])
+        else:
+            new_list.append(best_number)
+    
+    for i in range(len(list_of_tuples)):
+        list_of_tuples[i] = (new_list[i], list_of_tuples[i][1], list_of_tuples[i][2])
+    
+    return list_of_tuples
+
 # Connect to SQLite database
 conn = sqlite3.connect('../route_data/route_database.db')
 cursor = conn.cursor()
@@ -50,10 +82,12 @@ for route_id, stop_id in route_stops_data:
             unique_stops.add(stop_id)
 
 # Add directed edges between stops for each route
-for route_id, stop_id in route_stops_data:
-    next_stop_index = route_stops_data.index((route_id, stop_id)) + 1
-    if next_stop_index < len(route_stops_data):
-        next_stop_id = route_stops_data[next_stop_index][1]
+route_edges = {}
+for i in range(len(route_stops_data) - 1):
+    route_id, stop_id = route_stops_data[i]
+    next_route_id, next_stop_id = route_stops_data[i + 1]
+    # Check if consecutive stops belong to the same route
+    if route_id == next_route_id:
         # Calculate weight based on Haversine distance between stops
         current_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (stop_id,)).fetchone()
         next_stop_data = cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (next_stop_id,)).fetchone()
@@ -61,36 +95,40 @@ for route_id, stop_id in route_stops_data:
             current_lat, current_lon = current_stop_data
             next_lat, next_lon = next_stop_data
             distance = haversine_distance(current_lat, current_lon, next_lat, next_lon)
-            G.add_edge(stop_id, next_stop_id, route=route_id, weight=distance)
+            # Add the edge between stops
+            if (stop_id, next_stop_id) not in route_edges:
+                route_edges[(stop_id, next_stop_id)] = {'weight': distance, 'routes': set()}
+            # Add the route to the set of routes associated with this edge
+            route_edges[(stop_id, next_stop_id)]['routes'].add(route_id)
+
+# Add edges to the graph using the route_edges dictionary
+for edge, edge_data in route_edges.items():
+    G.add_edge(edge[0], edge[1], weight=edge_data['weight'], routes=list(edge_data['routes']))
+
+
+# Find the shortest route
+shortest_route = find_shortest_route(G, 19, 20)
+
+processed_route = []
+
+if shortest_route:
+    total_distance = 0
+    start_stop = shortest_route[0]
+    # Add starting stop with line weight 0
+    start_edge_data = G.get_edge_data(shortest_route[0], shortest_route[1])
+    processed_route.append((start_edge_data['routes'], start_stop, 0))
+    for i in range(1, len(shortest_route)):
+        current_stop = shortest_route[i]
+        previous_stop = shortest_route[i - 1]
+        edge_data = G.get_edge_data(previous_stop, current_stop)
+        segment_distance = edge_data['weight']
+        total_distance += segment_distance
+        processed_route.append((edge_data['routes'], current_stop, segment_distance))
+
+processed_route = least_change_combination(processed_route)
 
 # Close connection to the database
 conn.close()
-
-# Input start and end stops
-start_stop = input("Enter the ID of the start stop: ")
-end_stop = input("Enter the ID of the end stop: ")
-
-start_stop = int(start_stop)
-end_stop = int(end_stop)
-
-# Find the shortest route
-shortest_route = find_shortest_route(G, start_stop, end_stop)
-
-if shortest_route:
-    # Post-process the printed route
-    processed_route = [(0,shortest_route[0])]  # Add starting stop
-    for i in range(1, len(shortest_route) - 1):
-        current_stop = shortest_route[i]
-        previous_stop = shortest_route[i - 1]
-        next_stop = shortest_route[i + 1]
-        processed_route.append((G.edges[current_stop, next_stop]['route'], current_stop))
-    processed_route.append((G.edges[previous_stop, current_stop]['route'], shortest_route[-1]))  # Add final stop
-    print("Processed route:")
-    for route_stop_pair in processed_route:
-        if route_stop_pair:  # Skip empty tuples
-            print(route_stop_pair)
-else:
-    print("No route found between the given stops.")
 
 import matplotlib.pyplot as plt
 
