@@ -150,44 +150,43 @@
       });
     }
 
-    
-
     function updateStops(stops) {
-      console.log("updateStops called");
-      console.log("Stops:", stops);
-      console.log("Stops array:", stops_arr);
-
-      
       stops.forEach((row, index) => {
         const { id, name, lat, lon } = row;
         const key = `${id}`;
         const dotElement = document.createElement('div');
-            dotElement.className = 'dot-marker';
-        console.log(`Processing stop ${index + 1} with id: ${id}`);
-        
-        console.log("Stops array:", stops_arr);
+        dotElement.className = 'dot-marker';
+    
         if (stops_arr[key]) {
-          console.log(`Marker already exists for stop with id: ${id}`);
-          // Update the position of the existing marker
           stops_arr[key].setLngLat([lon, lat]);
         } else {
-          console.log(`Creating new marker for stop with id: ${id}`);
-          // Create a new marker
-          console.log(lon + " " + lat)
+          const popup = new mapboxgl.Popup({
+            closeButton: false,
+            closeOnClick: false
+          }).setHTML(`
+            <p>Name: ${name}</p>
+          `);
+    
           stops_arr[key] = new mapboxgl.Marker({
             element: dotElement,
           })
           .setLngLat([lon, lat])
+          .setPopup(popup)
           .addTo(map);
-          
-          stops_arr[key].setPopup(
-          new mapboxgl.Popup()
-            .setHTML(`
-              <p>Name: ${name}</p>
-            `)
-          );
+    
+          // Set a higher z-index for the stop marker
+          stops_arr[key].getElement().style.zIndex = 1000;
+    
+          stops_arr[key].getElement().addEventListener('mouseenter', () => {
+            stops_arr[key].togglePopup();
+          });
+    
+          stops_arr[key].getElement().addEventListener('mouseleave', () => {
+            stops_arr[key].togglePopup();
+          });
         }
-      })}
+      });
+    }
   
     function fetchAndUpdateData() {
       fetch('http://localhost:3000/data')
@@ -317,7 +316,12 @@
               }
             });
           });
+
+          Object.values(stops_arr).forEach(marker => {
+            marker.addTo(map);
+          });
         })
+        
         .catch(error => {
           console.error('Error:', error);
         });
