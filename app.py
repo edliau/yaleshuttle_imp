@@ -3,7 +3,7 @@ import sqlite3
 import json
 from flask_cors import CORS
 from collections import defaultdict
-from route_finder import process_route, route_to_coords
+from route_finder import haversine_distance, process_route, route_to_coords
 
 app = Flask(__name__)
 CORS(app)
