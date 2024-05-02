@@ -189,7 +189,8 @@ def route_to_coords(route):
     conn = sqlite3.connect('route_data/route_database.db')
     cursor = conn.cursor()
     coords = []
-    for route_id, stop_id in route:
+    print(route)
+    for route_id, stop_id, distance in route:
         print(stop_id)
         cursor.execute('''SELECT latitude, longitude FROM Stops WHERE id = ?''', (stop_id,))
         lat, lon = cursor.fetchone()

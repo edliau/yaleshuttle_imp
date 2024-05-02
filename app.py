@@ -3,7 +3,7 @@ import sqlite3
 import json
 from flask_cors import CORS
 from collections import defaultdict
-from route_finder import haversine_distance, process_route, route_to_coords
+from route_finder import haversine_distance, process_route, route_to_coords, find_best_route
 
 app = Flask(__name__)
 CORS(app)
@@ -86,9 +86,12 @@ def get_stops():
 @app.route('/find-shortest-route', methods=['POST'])
 def find_shortest_route():
     data = request.get_json()
+    # print(data)
     start_coord = data["start"]
     end_coord = data["end"]
-    route = process_route(start_coord, end_coord)
+    ## route = process_route(start_coord, end_coord)
+    print(f"Finding route from {start_coord} to {end_coord}")
+    route = find_best_route(start_coord, end_coord)
     ## print(route)
     route_coords = route_to_coords(route)
     return(jsonify(route_coords))

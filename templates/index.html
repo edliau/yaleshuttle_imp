@@ -243,7 +243,7 @@
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ start: 106, end: 69 })
+        body: JSON.stringify({ start: startCoord, end: endCoord })
       })
         .then(response => {
           if (response.ok) {
@@ -308,7 +308,7 @@
         document.getElementById('coord1').innerHTML = "No user location";
         document.getElementById('coord2').innerHTML = "Please enable location with the button the top right of the map.";
       } else {
-        endCoordList = [e.lngLat.lng, e.lngLat.lat];
+        endCoordList = [e.lngLat.lat, e.lngLat.lng];
         document.getElementById('coord2').innerHTML = "End Coord: " + endCoordList.toString();
 
         findShortestRoute(startCoordList, endCoordList);
@@ -336,7 +336,7 @@
     geolocate.on('geolocate', (e) => {
       var lon = e.coords.longitude;
       var lat = e.coords.latitude;
-      startCoordList = [lon, lat];
+      startCoordList = [lat, lon];
       document.getElementById('coord1').innerHTML = "Start Coord: " + startCoordList.toString();
       document.getElementById('coord2').innerHTML = "End Coord: ";
       console.log('A geolocate event has occurred.');
