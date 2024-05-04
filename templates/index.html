@@ -33,20 +33,24 @@
     .map-overlay-primary {
       top: 0;
       left: 0;
-      min-width: 80px; /* Minimum width */
-      max-width: 350px; /* Maximum width */
+      min-width: 80px;
+      /* Minimum width */
+      max-width: 350px;
+      /* Maximum width */
     }
 
     .map-overlay-secondary {
       top: 0;
       right: 0;
-      min-width: 80px; /* Minimum width */
-      max-width: 275px; /* Maximum width */
+      min-width: 80px;
+      /* Minimum width */
+      max-width: 275px;
+      /* Maximum width */
     }
 
     .map-overlay h1 {
-    padding-left: 10px;
-    padding-right: 10px;
+      padding-left: 10px;
+      padding-right: 10px;
     }
 
     .map-overlay .map-overlay-inner {
@@ -89,21 +93,22 @@
   <div class="map-overlay map-overlay-primary">
     <div class="map-overlay-inner">
       <h1>Yale Shuttle Route Finder</h1>
-          <fieldset class="select-fieldset">
-              <label id="coord1">Start Coord:</label>
-              <label id="coord2">End Coord:</label>
-          </fieldset>
+      <fieldset class="select-fieldset">
+        <label id="coord1">Start Coord:</label>
+        <label id="coord2">End Coord:</label>
+      </fieldset>
     </div>
   </div>
 
   <div class="map-overlay map-overlay-secondary">
     <div class="map-overlay-inner">
-     <h1>Instructions</h1>
-        <fieldset class="select-fieldset">
-            <label>Step 1: Click on the button on the bottom left to provide your location.</label>
-            <label>Step 2: If a notification from Google asks you to enable location services, please click "Allow".</label>
-            <label>Step 3: Click on your destination's location on the map- we'll then show you the best bus route there!</label>
-        </fieldset>
+      <h1>Instructions</h1>
+      <fieldset class="select-fieldset">
+        <label>Step 1: Click on the button on the bottom left to provide your location.</label>
+        <label>Step 2: If a notification from Google asks you to enable location services, please click "Allow".</label>
+        <label>Step 3: Click on your destination's location on the map- we'll then show you the best bus route
+          there!</label>
+      </fieldset>
     </div>
   </div>
 
@@ -183,21 +188,21 @@
       });
     }
 
-    
+
 
     function updateStops(stops) {
       console.log("updateStops called");
       console.log("Stops:", stops);
       console.log("Stops array:", stops_arr);
 
-      
+
       stops.forEach((row, index) => {
         const { id, name, lat, lon } = row;
         const key = `${id}`;
         const dotElement = document.createElement('div');
-            dotElement.className = 'dot-marker';
+        dotElement.className = 'dot-marker';
         console.log(`Processing stop ${index + 1} with id: ${id}`);
-        
+
         console.log("Stops array:", stops_arr);
         if (stops_arr[key]) {
           console.log(`Marker already exists for stop with id: ${id}`);
@@ -210,18 +215,19 @@
           stops_arr[key] = new mapboxgl.Marker({
             element: dotElement,
           })
-          .setLngLat([lon, lat])
-          .addTo(map);
-          
+            .setLngLat([lon, lat])
+            .addTo(map);
+
           stops_arr[key].setPopup(
-          new mapboxgl.Popup()
-            .setHTML(`
+            new mapboxgl.Popup()
+              .setHTML(`
               <p>Name: ${name}</p>
             `)
           );
         }
-      })}
-  
+      })
+    }
+
     function fetchAndUpdateData() {
       fetch('http://localhost:3000/data')
         .then(response => response.json())
@@ -270,34 +276,44 @@
       }
     }*/
 
+    let currController = null;
     async function findShortestRoute(startCoord, endCoord) {
-  fetch('/find-shortest-route', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ start: startCoord, end: endCoord })
-  })
-    .then(response => {
-      if (response.ok) {
-        return response.json(); // Return the GeoJSON response
-      } else {
-        throw new Error('Failed to find shortest route.');
-      }
-    })
-    .then(routeData => {
-      console.log('Route data:', routeData);
-      const coordinates = routeData.route_coords;
-      const naturalLanguageInstructions = routeData.natural_language_instructions;
-      console.log('Route coordinates:', coordinates);
-      const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
-      const coords = coordinates.map(coord => coord.join(',')).join(';');
-      const encodedString = encodeURIComponent(coords).replace(/,/g, '%2C');
-      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${encodedString}?access_token=${mapboxgl.accessToken}&geometries=geojson`;
-      console.log('URL:', url);
 
-      // Update the instructions overlay with the new instructions
-      instructionsOverlay.innerHTML = `
+      if(currController) {
+        currController.abort();
+      }
+
+      const abortcont = new AbortController();
+      currController = abortcont;
+
+      fetch('/find-shortest-route', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        signal: abortcont.signal,
+        body: JSON.stringify({ start: startCoord, end: endCoord })
+      })
+        .then(response => {
+          if (response.ok) {
+            return response.json(); // Return the GeoJSON response
+          } else {
+            throw new Error('Failed to find shortest route.');
+          }
+        })
+        .then(routeData => {
+          console.log('Route data:', routeData);
+          const coordinates = routeData.route_coords;
+          const naturalLanguageInstructions = routeData.natural_language_instructions;
+          console.log('Route coordinates:', coordinates);
+          const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+          const coords = coordinates.map(coord => coord.join(',')).join(';');
+          const encodedString = encodeURIComponent(coords).replace(/,/g, '%2C');
+          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${encodedString}?access_token=${mapboxgl.accessToken}&geometries=geojson`;
+          console.log('URL:', url);
+
+          // Update the instructions overlay with the new instructions
+          instructionsOverlay.innerHTML = `
         <div class="instructions-content">
           <h3>Route Instructions</h3>
           <p>${naturalLanguageInstructions}</p>
@@ -305,55 +321,55 @@
         </div>
       `;
 
-      // Show the instructions overlay
-      instructionsOverlay.style.display = 'block';
+          // Show the instructions overlay
+          instructionsOverlay.style.display = 'block';
 
-      // Add event listener to close the instructions overlay when the close button is clicked
-      const closeButton = instructionsOverlay.querySelector('.close-button');
-      closeButton.addEventListener('click', () => {
-        instructionsOverlay.style.display = 'none';
-      });
+          // Add event listener to close the instructions overlay when the close button is clicked
+          const closeButton = instructionsOverlay.querySelector('.close-button');
+          closeButton.addEventListener('click', () => {
+            instructionsOverlay.style.display = 'none';
+          });
 
-      return fetch(url);
-    })
-    .then(response => {
-      console.log('Response:', response);
-      return response.json();
-    })
-    .then(data => {
-      const route = data.routes[0].geometry;
+          return fetch(url);
+        })
+        .then(response => {
+          console.log('Response:', response);
+          return response.json();
+        })
+        .then(data => {
+          const route = data.routes[0].geometry;
 
-      // Remove the existing 'route' source and layer if they exist
-      if (map.getSource('route')) {
-        map.removeLayer('route');
-        map.removeSource('route');
-      }
+          // Remove the existing 'route' source and layer if they exist
+          if (map.getSource('route')) {
+            map.removeLayer('route');
+            map.removeSource('route');
+          }
 
-      // Add a new source with a unique ID
-      map.addSource('route', {
-        type: 'geojson',
-        data: {
-          type: 'Feature',
-          geometry: route
-        }
-      });
+          // Add a new source with a unique ID
+          map.addSource('route', {
+            type: 'geojson',
+            data: {
+              type: 'Feature',
+              geometry: route
+            }
+          });
 
-      // Add the route line to the map
-      map.addLayer({
-        id: 'route',
-        type: 'line',
-        source: 'route',
-        paint: {
-          'line-color': '#3887be',
-          'line-width': 5,
-          'line-opacity': 0.75
-        }
-      });
-    })
-    .catch(error => {
-      console.error('Error:', error);
-    });
-}
+          // Add the route line to the map
+          map.addLayer({
+            id: 'route',
+            type: 'line',
+            source: 'route',
+            paint: {
+              'line-color': '#3887be',
+              'line-width': 5,
+              'line-opacity': 0.75
+            }
+          });
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
 
     //onClick, update the end coordinates, and pass them to the server to find the shortest route. Also checks for user location.
     map.on('click', (e) => {
