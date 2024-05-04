@@ -135,6 +135,8 @@ def process_route(input_start_stop, input_end_stop):
 
 def find_best_route(start_coords, end_coords):
     bus_stop_distances = []
+    
+    # Connect to the SQLite database
     conn = sqlite3.connect('route_data/route_database.db')
     cursor = conn.cursor()
 
@@ -146,44 +148,62 @@ def find_best_route(start_coords, end_coords):
     cursor.execute('''SELECT DISTINCT stop_id FROM RouteStops''')
     route_stops = set(row[0] for row in cursor.fetchall())
 
+    # Close the database connection
     conn.close()
 
-    # Calculate distances from start and end coordinates to each stop
+    # Calculate distances from start coordinates to each stop
     for stop_id, stop_name, lat, lon in stops_data:
         if stop_id in route_stops:
             distance_to_start = haversine_distance(start_coords[0], start_coords[1], lat, lon)
-            distance_to_end = haversine_distance(end_coords[0], end_coords[1], lat, lon)
-            bus_stop_distances.append((stop_id, stop_name, distance_to_start, distance_to_end))
+            bus_stop_distances.append((stop_id, stop_name, distance_to_start))
 
-    # Sort bus stops by total distance
+    # Sort bus stops by total distance to start coordinates
     bus_stop_distances_from_start = sorted(bus_stop_distances, key=lambda x: x[2])
-    #get closest 15 bus stops to start
-    closest_stops = bus_stop_distances_from_start[:15]
-    #find the bus_stop closest to the selected end coordinates
-    bus_stop_distances_from_end = sorted(bus_stop_distances, key=lambda x: x[3])
-    target_final_stop = bus_stop_distances_from_end[0]
+    # Get closest 15 bus stops to start
+    closest_start_stops = bus_stop_distances_from_start[:15]
+
+    # Calculate distances from end coordinates to each stop
+    bus_stop_distances_from_end = []
+    for stop_id, stop_name, lat, lon in stops_data:
+        if stop_id in route_stops:
+            distance_to_end = haversine_distance(end_coords[0], end_coords[1], lat, lon)
+            bus_stop_distances_from_end.append((stop_id, stop_name, distance_to_end))
+
+    # Sort bus stops by total distance to end coordinates
+    closest_end_stops = sorted(bus_stop_distances_from_end, key=lambda x: x[2])[:10]
 
     distance_scores = []
 
-    for stop in closest_stops:
-        route = process_route(stop[0], target_final_stop[0])
-        if route:
-            total_distance = sum(segment[2] for segment in route)  # Extract total distance from the processed route
-            distance_scores.append((stop[0],stop[1],total_distance))
-
-    for starting_stop in bus_stop_distances_from_start:
-        for index, stop in enumerate(distance_scores):
-            if starting_stop[0] == stop[0]:
-                # If stop_id matches, update the tuple in distance_scores to include distance_to_start
-                distance_scores[index] = (stop[0], stop[1], stop[2], starting_stop[2])
+    # Iterate over each combination of start and end stops
+    for start_stop in closest_start_stops:
+        for end_stop in closest_end_stops:
+            # Find the route between the current start and end stops
+            route = process_route(start_stop[0], end_stop[0])
+            if route:
+                # Calculate total distance of the route
+                total_distance = sum(segment[2] for segment in route)
+                # Store the start and end stop IDs, start stop name, end stop name, and total distance
+                distance_scores.append((start_stop[0], start_stop[1], end_stop[0], end_stop[1], total_distance))
 
     weighted_scores = []
-    for stop_id, stop_name, bus_distance, distance_to_start in distance_scores:
-        weighted_score = 0.3 * bus_distance + 0.7 * distance_to_start
-        weighted_scores.append((stop_id, stop_name, weighted_score))
-    shortest_route_stop = min(weighted_scores, key=lambda x: x[2])
-    
-    return process_route(shortest_route_stop[0],target_final_stop[0])
+
+    # Calculate weighted scores for each combination of start and end stops
+    for start_stop_id, start_stop_name, end_stop_id, end_stop_name, total_distance in distance_scores:
+        # Find the bus distance to the start stop
+        bus_distance = next((d for _, _, d in bus_stop_distances_from_start if _ == start_stop_name), None)
+        # Find the distance to the end stop
+        distance_to_end = next((d for _, _, d in closest_end_stops if _ == end_stop_name), None)
+        # If both distances are found, calculate the weighted score
+        if bus_distance is not None and distance_to_end is not None:
+            weighted_score = 0.3 * bus_distance + 0.7 * total_distance + 0.7 * distance_to_end
+            weighted_scores.append((start_stop_id, start_stop_name, end_stop_id, end_stop_name, weighted_score))
+
+    # Find the route with the shortest weighted score
+    shortest_route_stop = min(weighted_scores, key=lambda x: x[4])
+
+    # Return the best route between the start and end stops
+    return process_route(shortest_route_stop[0], shortest_route_stop[2])
+
 
 def route_to_coords(route):
     conn = sqlite3.connect('route_data/route_database.db')
