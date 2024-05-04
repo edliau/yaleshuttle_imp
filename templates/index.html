@@ -20,6 +20,10 @@
       position: relative;
     }
 
+    #coord1, #coord2 {
+      display: none;
+    }
+
     .map-overlay {
       font:
         12px/20px 'Helvetica Neue',
@@ -88,7 +92,7 @@
 
   <div class="map-overlay map-overlay-primary">
     <div class="map-overlay-inner">
-      <h1>Yale Shuttle Route Finder</h1>
+      <h1 class="title">Yuttle Router</h1>
           <fieldset class="select-fieldset">
               <label id="coord1">Start Coord:</label>
               <label id="coord2">End Coord:</label>
@@ -98,11 +102,11 @@
 
   <div class="map-overlay map-overlay-secondary">
     <div class="map-overlay-inner">
-     <h1>Instructions</h1>
-        <fieldset class="select-fieldset">
-            <label>Step 1: Click on the button on the bottom left to provide your location.</label>
-            <label>Step 2: If a notification from Google asks you to enable location services, please click "Allow".</label>
-            <label>Step 3: Click on your destination's location on the map- we'll then show you the best bus route there!</label>
+     <h1 class="inst-title">Instructions</h1>
+        <fieldset id="inst" class="select-fieldset">
+            <label class="step">Step 1: Click on the button on the bottom left to provide your location.</label>
+            <label class="step">Step 2: If a notification from Google asks you to enable location services, please click "Allow".</label>
+            <label class="step">Step 3: Click on your destination's location on the map- we'll then show you the best bus route there!</label>
         </fieldset>
     </div>
   </div>
@@ -300,7 +304,7 @@
       instructionsOverlay.innerHTML = `
         <div class="instructions-content">
           <h3>Route Instructions</h3>
-          <p>${naturalLanguageInstructions}</p>
+          <p class="inst">${naturalLanguageInstructions}</p>
           <button class="close-button">Close</button>
         </div>
       `;
