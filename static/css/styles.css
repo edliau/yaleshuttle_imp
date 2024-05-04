@@ -6,3 +6,24 @@
     border: 2px solid #ffffff;
     cursor: pointer;
   }
+
+.instructions-overlay {
+  display: none;
+  position: absolute;
+  top: 173px;
+  left: 10px;
+  background-color: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  z-index: 1;
+  max-width:301px;
+}
+
+.instructions-content {
+  max-width: 310;
+}
+
+.close-button {
+  margin-top: 10px;
+}

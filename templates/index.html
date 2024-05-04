@@ -117,6 +117,10 @@
       zoom: 12
     });
 
+    const instructionsOverlay = document.createElement('div');
+    instructionsOverlay.className = 'instructions-overlay';
+    document.body.appendChild(instructionsOverlay);
+
     let markers = {};
     let stops_arr = {};
     let coordtoggle = true;
@@ -266,70 +270,90 @@
       }
     }*/
 
-    function findShortestRoute(startCoord, endCoord) {
-      fetch('/find-shortest-route', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ start: startCoord, end: endCoord })
-      })
-        .then(response => {
-          if (response.ok) {
-            return response.json(); // Return the GeoJSON response
-          } else {
-            throw new Error('Failed to find shortest route.');
-          }
-        })
-        .then(routeData => {
-          console.log('Route data:', routeData);
-          const coordinates = routeData.map(coord => coord[0]);
-          console.log('Route coordinates:', coordinates);
-          const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
-          const coords = coordinates.join(';')
-          const encodedString = encodeURIComponent(coords).replace(/,/g, '%2C');
-          const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?access_token=${mapboxgl.accessToken}&geometries=geojson`;
-          console.log('URL:', url);
-          return fetch(url);
-        })
-        .then(response => {
-          console.log('Response:', response);
-          return response.json();
-        })
-        .then(data => {
-          const route = data.routes[0].geometry;
-    
-          // Remove the existing 'route' source and layer if they exist
-          if (map.getSource('route')) {
-            map.removeLayer('route');
-            map.removeSource('route');
-          }
-    
-          // Add a new source with a unique ID
-          map.addSource('route', {
-            type: 'geojson',
-            data: {
-              type: 'Feature',
-              geometry: route
-            }
-          });
-    
-          // Add the route line to the map
-          map.addLayer({
-            id: 'route',
-            type: 'line',
-            source: 'route',
-            paint: {
-              'line-color': '#3887be',
-              'line-width': 5,
-              'line-opacity': 0.75
-            }
-          });
-        })
-        .catch(error => {
-          console.error('Error:', error);
-        });
-    }
+    async function findShortestRoute(startCoord, endCoord) {
+  fetch('/find-shortest-route', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ start: startCoord, end: endCoord })
+  })
+    .then(response => {
+      if (response.ok) {
+        return response.json(); // Return the GeoJSON response
+      } else {
+        throw new Error('Failed to find shortest route.');
+      }
+    })
+    .then(routeData => {
+      console.log('Route data:', routeData);
+      const coordinates = routeData.route_coords;
+      const naturalLanguageInstructions = routeData.natural_language_instructions;
+      console.log('Route coordinates:', coordinates);
+      const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
+      const coords = coordinates.map(coord => coord.join(',')).join(';');
+      const encodedString = encodeURIComponent(coords).replace(/,/g, '%2C');
+      const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${encodedString}?access_token=${mapboxgl.accessToken}&geometries=geojson`;
+      console.log('URL:', url);
+
+      // Update the instructions overlay with the new instructions
+      instructionsOverlay.innerHTML = `
+        <div class="instructions-content">
+          <h3>Route Instructions</h3>
+          <p>${naturalLanguageInstructions}</p>
+          <button class="close-button">Close</button>
+        </div>
+      `;
+
+      // Show the instructions overlay
+      instructionsOverlay.style.display = 'block';
+
+      // Add event listener to close the instructions overlay when the close button is clicked
+      const closeButton = instructionsOverlay.querySelector('.close-button');
+      closeButton.addEventListener('click', () => {
+        instructionsOverlay.style.display = 'none';
+      });
+
+      return fetch(url);
+    })
+    .then(response => {
+      console.log('Response:', response);
+      return response.json();
+    })
+    .then(data => {
+      const route = data.routes[0].geometry;
+
+      // Remove the existing 'route' source and layer if they exist
+      if (map.getSource('route')) {
+        map.removeLayer('route');
+        map.removeSource('route');
+      }
+
+      // Add a new source with a unique ID
+      map.addSource('route', {
+        type: 'geojson',
+        data: {
+          type: 'Feature',
+          geometry: route
+        }
+      });
+
+      // Add the route line to the map
+      map.addLayer({
+        id: 'route',
+        type: 'line',
+        source: 'route',
+        paint: {
+          'line-color': '#3887be',
+          'line-width': 5,
+          'line-opacity': 0.75
+        }
+      });
+    })
+    .catch(error => {
+      console.error('Error:', error);
+    });
+}
 
     //onClick, update the end coordinates, and pass them to the server to find the shortest route. Also checks for user location.
     map.on('click', (e) => {

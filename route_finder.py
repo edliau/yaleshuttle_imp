@@ -3,6 +3,31 @@ import networkx as nx
 from math import radians, sin, cos, sqrt, atan2
 from collections import Counter
 
+def route_to_txt(route):
+    conn = sqlite3.connect('route_data/route_database.db')
+    cursor = conn.cursor()
+    conn2 = sqlite3.connect('route_data/route_database.db')
+    cursor2 = conn2.cursor()
+    txt = []
+    current_route = None
+    start_stop = None
+    for route_id, stop_id, distance in route:
+        cursor.execute('''SELECT name FROM Stops WHERE id = ?''', (stop_id,))
+        cursor2.execute('''SELECT name FROM routes WHERE id = ?''', (route_id,))
+        stop_name = cursor.fetchone()[0]
+        route_name = cursor2.fetchone()[0]
+        if current_route is None:
+            current_route = route_name
+            start_stop = stop_name
+        elif current_route != route_name:
+            txt.append(f"Take route {current_route} from {start_stop} to {prev_stop}")
+            start_stop = stop_name
+            current_route = route_name
+        prev_stop = stop_name
+    txt.append(f"Take route {current_route} from {start_stop} to {prev_stop}")
+    conn.close()
+    return txt
+
 def find_shortest_route(G, start_stop, end_stop):
     try:
         shortest_path = nx.shortest_path(G, source=start_stop, target=end_stop, weight='weight')
