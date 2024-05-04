@@ -20,11 +20,11 @@ def route_to_txt(route):
             current_route = route_name
             start_stop = stop_name
         elif current_route != route_name:
-            txt.append(f"Take route {current_route} from {start_stop} to {prev_stop}")
+            txt.append(f"Take route <strong>{current_route}</strong> from <strong>{start_stop}</strong> to <strong>{prev_stop}</strong>")
             start_stop = stop_name
             current_route = route_name
         prev_stop = stop_name
-    txt.append(f"Take route {current_route} from {start_stop} to {prev_stop}")
+    txt.append(f"Take route <strong>{current_route}</strong> from <strong>{start_stop}</strong> to <strong>{prev_stop}</strong>")
     conn.close()
     return txt
 
