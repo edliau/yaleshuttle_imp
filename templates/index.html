@@ -11,11 +11,13 @@
     body {
       margin: 0;
       padding: 0;
+      position: relative;
     }
 
     #map-container {
       width: 100vw;
       height: 100vh;
+      position: relative;
     }
 
     .map-overlay {
@@ -25,10 +27,26 @@
         Helvetica,
         sans-serif;
       position: absolute;
-      width: 350px;
+      padding: 10px;
+    }
+
+    .map-overlay-primary {
       top: 0;
       left: 0;
-      padding: 10px;
+      min-width: 80px; /* Minimum width */
+      max-width: 350px; /* Maximum width */
+    }
+
+    .map-overlay-secondary {
+      top: 0;
+      right: 0;
+      min-width: 80px; /* Minimum width */
+      max-width: 275px; /* Maximum width */
+    }
+
+    .map-overlay h1 {
+    padding-left: 10px;
+    padding-right: 10px;
     }
 
     .map-overlay .map-overlay-inner {
@@ -67,13 +85,24 @@
 
 <body>
   <div id="map-container"></div>
-  <div class="map-overlay top">
+
+  <div class="map-overlay map-overlay-primary">
     <div class="map-overlay-inner">
-     <h1>Yale Shuttle Route Finder</h1>
-      <p>Click to select start and end points.</p>
+      <h1>Yale Shuttle Route Finder</h1>
+          <fieldset class="select-fieldset">
+              <label id="coord1">Start Coord:</label>
+              <label id="coord2">End Coord:</label>
+          </fieldset>
+    </div>
+  </div>
+
+  <div class="map-overlay map-overlay-secondary">
+    <div class="map-overlay-inner">
+     <h1>Instructions</h1>
         <fieldset class="select-fieldset">
-            <label id="coord1">Start Coord:</label>
-            <label id="coord2">End Coord:</label>
+            <label>Step 1: Click on the button on the bottom left to provide your location.</label>
+            <label>Step 2: If a notification from Google asks you to enable location services, please click "Allow".</label>
+            <label>Step 3: Click on your destination's location on the map- we'll then show you the best bus route there!</label>
         </fieldset>
     </div>
   </div>
@@ -305,8 +334,7 @@
     //onClick, update the end coordinates, and pass them to the server to find the shortest route. Also checks for user location.
     map.on('click', (e) => {
       if (startCoordList == null) {
-        document.getElementById('coord1').innerHTML = "No user location";
-        document.getElementById('coord2').innerHTML = "Please enable location with the button the top right of the map.";
+        document.getElementById('coord1').innerHTML = "User location not found! Please ensure your location services are enabled.";
       } else {
         endCoordList = [e.lngLat.lat, e.lngLat.lng];
         document.getElementById('coord2').innerHTML = "End Coord: " + endCoordList.toString();
