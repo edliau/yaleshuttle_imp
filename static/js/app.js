@@ -24,18 +24,25 @@ const colorDict = {
     '9': '#70AD46',
     '10': '#6F30A1',
     '11': '#7E6001',
-    '12': '#F6BE00'
+    '12': '#F6BE00',
+    '13' : "#4472C4",
+    '14' : "#ED7D31",
 };
 
 const routesNames = {
     '1': 'Blue',
     '2': 'Orange',
     '3': 'Red',
+    '4': 'Blue - Weekend Daytime',
+    '6' : "Weekend Grocery",
+    "7" : "Cedar Express",
     '8': 'Pink',
     '9': 'Green',
     '10': 'Purple',
     '11': 'Brown',
-    '12': 'Yellow'
+    '12': 'Yellow',
+    '13' : "Blue - Night",
+    '14' : "Orange - Night",
 };
 
 function getMarkerColor(route) {
