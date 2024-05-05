@@ -317,12 +317,14 @@
 
           // Update the instructions overlay with the new instructions
           instructionsOverlay.innerHTML = `
-        <div class="instructions-content">
+          <div class="instructions-content">
           <h3>Route Instructions</h3>
-          <p class="inst">${naturalLanguageInstructions}</p>
+            <ul>
+              ${naturalLanguageInstructions.map(instruction => `<li class="inst">${instruction}</li>`).join('')}
+            </ul>
           <button class="close-button">Close</button>
         </div>
-      `;
+        `;
 
           // Show the instructions overlay
           instructionsOverlay.style.display = 'block';
