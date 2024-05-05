@@ -5,7 +5,7 @@ from flask_cors import CORS
 from collections import defaultdict
 from route_finder import haversine_distance, process_route, route_to_coords, find_best_route, route_to_txt
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 CORS(app)
 
 @app.route('/home', methods=['GET'])
