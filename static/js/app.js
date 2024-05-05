@@ -166,7 +166,6 @@ async function findShortestRoute(startCoord, endCoord) {
             const coordinates = routeData.route_coords;
             const naturalLanguageInstructions = routeData.natural_language_instructions;
             // console.log('Route coordinates:', coordinates);
-            const accessToken = 'YOUR_MAPBOX_ACCESS_TOKEN';
             const coords = coordinates.map(coord => coord.join(',')).join(';');
             const encodedString = encodeURIComponent(coords).replace(/,/g, '%2C');
             const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${encodedString}?access_token=${mapboxgl.accessToken}&geometries=geojson`;
